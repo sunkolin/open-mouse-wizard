@@ -122,8 +122,8 @@ func (m *MouseMover) Stop(onStatus StatusCallback) {
 }
 
 func moveMouseRandomly() error {
-	offsetX := rand.Intn(100) - 50
-	offsetY := rand.Intn(100) - 50
+	offsetX := rand.Intn(11) - 5
+	offsetY := rand.Intn(11) - 5
 
 	var pt point
 	procGetCursorPos.Call(uintptr(unsafe.Pointer(&pt)))
