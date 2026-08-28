@@ -22,8 +22,8 @@ if (-not $goCmd) {
 go version
 Write-Host ""
 
-Write-Host "[2/3] 构建 Windows 版本 (Gio GUI)..." -ForegroundColor Yellow
-Write-Host "    使用 CGO_ENABLED=1 编译 Gio GUI 应用" -ForegroundColor DarkGray
+Write-Host "[2/3] 构建 Windows 版本 (Fyne GUI)..." -ForegroundColor Yellow
+Write-Host "    使用 CGO_ENABLED=1 编译 Fyne GUI 应用" -ForegroundColor DarkGray
 Write-Host '    添加 -ldflags="-H windowsgui" 隐藏命令行窗口' -ForegroundColor DarkGray
 Write-Host ""
 

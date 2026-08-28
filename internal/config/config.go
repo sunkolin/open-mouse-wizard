@@ -13,8 +13,8 @@ func LoadConfig() *model.AppConfig {
 	config := &model.AppConfig{
 		GUI: model.GUIConfig{
 			Title:  "鼠标精灵",
-			Width:  400,
-			Height: 280,
+			Width:  250,
+			Height: 250,
 		},
 		Mover: model.MoverConfig{
 			Interval: 60,
@@ -28,6 +28,16 @@ func LoadConfig() *model.AppConfig {
 	}
 
 	yaml.Unmarshal(data, config)
+
+	if config.GUI.Width <= 0 {
+		config.GUI.Width = 250
+	}
+	if config.GUI.Height <= 0 {
+		config.GUI.Height = 250
+	}
+	if config.Mover.Interval <= 0 {
+		config.Mover.Interval = 60
+	}
 	return config
 }
 
