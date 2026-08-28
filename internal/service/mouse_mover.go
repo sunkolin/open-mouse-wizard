@@ -3,12 +3,10 @@ package service
 import (
 	"fmt"
 	"math/rand"
-	"os"
-	"os/exec"
-	"runtime"
-	"strconv"
 	"sync"
+	"syscall"
 	"time"
+	"unsafe"
 )
 
 type StatusCallback func(message string)
@@ -19,6 +17,16 @@ type MouseMover struct {
 	stopCh     chan struct{}
 	minSeconds int
 	maxSeconds int
+}
+
+var (
+	user32           = syscall.NewLazyDLL("user32.dll")
+	procGetCursorPos = user32.NewProc("GetCursorPos")
+	procSetCursorPos = user32.NewProc("SetCursorPos")
+)
+
+type point struct {
+	X, Y int32
 }
 
 func NewMouseMover() *MouseMover {
@@ -116,73 +124,13 @@ func (m *MouseMover) Stop(onStatus StatusCallback) {
 func moveMouseRandomly() error {
 	offsetX := rand.Intn(100) - 50
 	offsetY := rand.Intn(100) - 50
-	return moveMouse(offsetX, offsetY)
-}
 
-func moveMouse(offsetX, offsetY int) error {
-	switch runtime.GOOS {
-	case "darwin":
-		return moveMouseDarwinImpl(offsetX, offsetY)
-	case "windows":
-		return moveMouseWindowsImpl(offsetX, offsetY)
-	case "linux":
-		return moveMouseLinux(offsetX, offsetY)
-	default:
-		return fmt.Errorf("不支持的平台: %s", runtime.GOOS)
-	}
-}
+	var pt point
+	procGetCursorPos.Call(uintptr(unsafe.Pointer(&pt)))
 
-var moveMouseDarwinImpl = func(offsetX, offsetY int) error {
-	return fmt.Errorf("macOS 实现未加载")
-}
+	newX := pt.X + int32(offsetX)
+	newY := pt.Y + int32(offsetY)
 
-var moveMouseWindowsImpl = func(offsetX, offsetY int) error {
-	return fmt.Errorf("Windows 实现未加载")
-}
-
-func moveMouseLinux(offsetX, offsetY int) error {
-	getPos := exec.Command("xdotool", "getmouselocation")
-	output, err := getPos.Output()
-	if err != nil {
-		return fmt.Errorf("xdotool 执行失败: %v", err)
-	}
-
-	var x, y int
-	fmt.Sscanf(string(output), "x:%d y:%d", &x, &y)
-
-	newX := x + offsetX
-	newY := y + offsetY
-
-	cmd := exec.Command("xdotool", "mousemove", strconv.Itoa(newX), strconv.Itoa(newY))
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("移动鼠标失败: %v", err)
-	}
-
-	return nil
-}
-
-func runHelperBinary(helperBinary []byte, offsetX, offsetY int) error {
-	tmpFile, err := os.CreateTemp("", "mouse-helper-*")
-	if err != nil {
-		return fmt.Errorf("创建临时文件失败: %v", err)
-	}
-	tmpPath := tmpFile.Name()
-	defer os.Remove(tmpPath)
-
-	if _, err := tmpFile.Write(helperBinary); err != nil {
-		tmpFile.Close()
-		return fmt.Errorf("写入辅助程序失败: %v", err)
-	}
-	tmpFile.Close()
-
-	if err := os.Chmod(tmpPath, 0755); err != nil {
-		return fmt.Errorf("设置执行权限失败: %v", err)
-	}
-
-	cmd := exec.Command(tmpPath, strconv.Itoa(offsetX), strconv.Itoa(offsetY))
-	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("辅助程序执行失败: %v (%s)", err, string(output))
-	}
-
+	procSetCursorPos.Call(uintptr(newX), uintptr(newY))
 	return nil
 }
