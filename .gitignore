@@ -30,3 +30,7 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+/open-mouse-wizard.zip
+/bin
+.idea
