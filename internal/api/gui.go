@@ -23,15 +23,29 @@ type GUI struct {
 	v4App     fyne.App
 }
 
+func loadAppIcon() fyne.Resource {
+	if len(appIconData) > 0 {
+		return fyne.NewStaticResource("icon.png", appIconData)
+	}
+	return nil
+}
+
 func RunGUI() {
 	cfg := config.LoadConfig()
 
-	myApp := app.New()
+	myApp := app.NewWithID("com.mousewizard.app")
 	myApp.Settings().SetTheme(theme.DefaultTheme())
+
+	icon := loadAppIcon()
 
 	window := myApp.NewWindow(cfg.GUI.Title)
 	window.Resize(fyne.NewSize(float32(cfg.GUI.Width), float32(cfg.GUI.Height)))
 	window.SetFixedSize(true)
+
+	if icon != nil {
+		window.SetIcon(icon)
+		myApp.SetIcon(icon)
+	}
 
 	mover := service.NewMouseMover()
 

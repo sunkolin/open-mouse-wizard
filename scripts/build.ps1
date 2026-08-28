@@ -22,16 +22,31 @@ if (-not $goCmd) {
 go version
 Write-Host ""
 
+$fyneCmd = Get-Command fyne -ErrorAction SilentlyContinue
+if (-not $fyneCmd) {
+    Write-Host "未检测到 fyne CLI，正在安装..." -ForegroundColor Yellow
+    go install fyne.io/fyne/v2/cmd/fyne@latest
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "fyne CLI 安装失败" -ForegroundColor Red
+        Read-Host "按回车键退出"
+        exit 1
+    }
+}
+
 Write-Host "[2/3] 构建 Windows 版本 (Fyne GUI)..." -ForegroundColor Yellow
-Write-Host "    使用 CGO_ENABLED=1 编译 Fyne GUI 应用" -ForegroundColor DarkGray
-Write-Host '    添加 -ldflags="-H windowsgui" 隐藏命令行窗口' -ForegroundColor DarkGray
+Write-Host "    使用 fyne package 构建（自动嵌入图标）" -ForegroundColor DarkGray
 Write-Host ""
 
-$env:CGO_ENABLED = "1"
-go mod tidy
-go build -ldflags="-H windowsgui" -o "bin\mouse-wizard.exe" ./cmd/app
+Copy-Item "icon.png" "cmd\app\icon.png" -Force -ErrorAction SilentlyContinue
 
-if ($LASTEXITCODE -ne 0) {
+Push-Location "cmd\app"
+fyne package --icon icon.png --os windows
+$buildExitCode = $LASTEXITCODE
+Pop-Location
+
+Remove-Item "cmd\app\icon.png" -ErrorAction SilentlyContinue
+
+if ($buildExitCode -ne 0) {
     Write-Host ""
     Write-Host "构建失败！" -ForegroundColor Red
     Write-Host ""
@@ -44,6 +59,17 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "安装 MinGW-w64 后，请将其 bin 目录添加到系统 PATH 环境变量" -ForegroundColor Red
     Read-Host "按回车键退出"
     exit 1
+}
+
+Copy-Item "cmd\app\app.exe" "bin\mouse-wizard.exe" -Force
+Remove-Item "cmd\app\app.exe" -ErrorAction SilentlyContinue
+
+if (Test-Path "manifest.xml") {
+    $mtCmd = Get-Command mt -ErrorAction SilentlyContinue
+    if ($mtCmd) {
+        Write-Host "    注入自定义 manifest (管理员权限)..." -ForegroundColor DarkGray
+        mt -manifest "manifest.xml" -outputresource:"bin\mouse-wizard.exe;#1" 2>$null
+    }
 }
 
 Write-Host ""
