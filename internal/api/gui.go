@@ -95,12 +95,14 @@ func (g *GUI) onStart() {
 
 	g.toggleBtn.SetText("停止")
 	g.toggleBtn.Importance = widget.DangerImportance
+	g.toggleBtn.Refresh()
 }
 
 func (g *GUI) onStop() {
 	g.mover.Stop(func(msg string) {})
 	g.toggleBtn.SetText("启动")
 	g.toggleBtn.Importance = widget.HighImportance
+	g.toggleBtn.Refresh()
 }
 
 func parseInt(s string) (int, error) {
