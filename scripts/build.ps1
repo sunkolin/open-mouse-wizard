@@ -61,14 +61,27 @@ if ($buildExitCode -ne 0) {
     exit 1
 }
 
-Copy-Item "cmd\app\app.exe" "bin\mouse-wizard.exe" -Force
+$version = ""
+$fyneConfig = Get-Content "FyneApp.toml" -ErrorAction SilentlyContinue
+foreach ($line in $fyneConfig) {
+    if ($line -match '^\s*Version\s*=\s*"([^"]+)"') {
+        $version = $Matches[1]
+        break
+    }
+}
+if (-not $version) { $version = "0.0.0" }
+
+$exeName = "开源鼠标精灵-$version.exe"
+$exePath = "bin\$exeName"
+
+Copy-Item "cmd\app\app.exe" $exePath -Force
 Remove-Item "cmd\app\app.exe" -ErrorAction SilentlyContinue
 
 if (Test-Path "manifest.xml") {
     $mtCmd = Get-Command mt -ErrorAction SilentlyContinue
     if ($mtCmd) {
         Write-Host "    注入自定义 manifest (管理员权限)..." -ForegroundColor DarkGray
-        mt -manifest "manifest.xml" -outputresource:"bin\mouse-wizard.exe;#1" 2>$null
+        mt -manifest "manifest.xml" -outputresource:"$exePath;#1" 2>$null
     }
 }
 
@@ -77,22 +90,21 @@ Write-Host "构建成功" -ForegroundColor Green
 Write-Host ""
 
 Write-Host "[3/3] 验证文件..." -ForegroundColor Yellow
-$exePath = "bin\mouse-wizard.exe"
 if (-not (Test-Path $exePath)) {
-    Write-Host "bin\mouse-wizard.exe 未找到！" -ForegroundColor Red
+    Write-Host "$exeName 未找到！" -ForegroundColor Red
     Read-Host "按回车键退出"
     exit 1
 }
 
 $size = (Get-Item $exePath).Length
-Write-Host "bin\mouse-wizard.exe 已生成 (大小: $size 字节)" -ForegroundColor Green
+Write-Host "$exeName 已生成 (大小: $size 字节)" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  构建完成！" -ForegroundColor Green
-Write-Host "  输出: bin\mouse-wizard.exe" -ForegroundColor White
+Write-Host "  输出: $exePath" -ForegroundColor White
 Write-Host ""
-Write-Host "  双击 bin\mouse-wizard.exe 即可运行" -ForegroundColor White
+Write-Host "  双击 $exeName 即可运行" -ForegroundColor White
 Write-Host "  如需修改配置，编辑 configs\config.yaml" -ForegroundColor White
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
