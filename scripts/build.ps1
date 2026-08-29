@@ -71,7 +71,7 @@ foreach ($line in $fyneConfig) {
 }
 if (-not $version) { $version = "0.0.0" }
 
-$exeName = "开源鼠标精灵-$version.exe"
+$exeName = "OpenMouseWizard-$version.exe"
 $exePath = "bin\$exeName"
 
 Copy-Item "cmd\app\app.exe" $exePath -Force
