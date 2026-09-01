@@ -6,7 +6,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	"unsafe"
 )
 
 type StatusCallback func(message string)
@@ -20,14 +19,14 @@ type MouseMover struct {
 }
 
 var (
-	user32           = syscall.NewLazyDLL("user32.dll")
-	procGetCursorPos = user32.NewProc("GetCursorPos")
-	procSetCursorPos = user32.NewProc("SetCursorPos")
+	user32        = syscall.NewLazyDLL("user32.dll")
+	procKeybdEvent = user32.NewProc("keybd_event")
 )
 
-type point struct {
-	X, Y int32
-}
+const (
+	vkControl      = 0x11
+	keyeventfKeyup = 0x0002
+)
 
 func NewMouseMover() *MouseMover {
 	return &MouseMover{
@@ -53,7 +52,7 @@ func (m *MouseMover) Start(intervalSeconds int, onStatus StatusCallback) error {
 	m.stopCh = make(chan struct{})
 	m.mu.Unlock()
 
-	onStatus(fmt.Sprintf("已启动，每 %d 秒移动一次鼠标", intervalSeconds))
+	onStatus(fmt.Sprintf("已启动，每 %d 秒点击一次Ctrl键", intervalSeconds))
 
 	go m.runLoop(onStatus)
 
@@ -72,7 +71,7 @@ func (m *MouseMover) StartRange(minSeconds, maxSeconds int, onStatus StatusCallb
 	m.stopCh = make(chan struct{})
 	m.mu.Unlock()
 
-	onStatus(fmt.Sprintf("已启动，每 %d-%d 秒随机移动鼠标", minSeconds, maxSeconds))
+	onStatus(fmt.Sprintf("已启动，每 %d-%d 秒随机点击Ctrl键", minSeconds, maxSeconds))
 
 	go m.runLoop(onStatus)
 
@@ -86,12 +85,12 @@ func (m *MouseMover) runLoop(onStatus StatusCallback) {
 
 		select {
 		case <-timer.C:
-			err := moveMouseRandomly()
+			err := pressCtrlKey()
 			timestamp := time.Now().Format("15:04:05")
 			if err != nil {
-				onStatus(fmt.Sprintf("[%s] 移动失败: %v", timestamp, err))
+				onStatus(fmt.Sprintf("[%s] 点击失败: %v", timestamp, err))
 			} else {
-				onStatus(fmt.Sprintf("[%s] 鼠标已移动，下次在 %d 秒后", timestamp, interval))
+				onStatus(fmt.Sprintf("[%s] Ctrl键已点击，下次在 %d 秒后", timestamp, interval))
 			}
 		case <-m.stopCh:
 			timer.Stop()
@@ -121,16 +120,9 @@ func (m *MouseMover) Stop(onStatus StatusCallback) {
 	onStatus("已停止")
 }
 
-func moveMouseRandomly() error {
-	offsetX := rand.Intn(11) - 5
-	offsetY := rand.Intn(11) - 5
-
-	var pt point
-	procGetCursorPos.Call(uintptr(unsafe.Pointer(&pt)))
-
-	newX := pt.X + int32(offsetX)
-	newY := pt.Y + int32(offsetY)
-
-	procSetCursorPos.Call(uintptr(newX), uintptr(newY))
+func pressCtrlKey() error {
+	procKeybdEvent.Call(uintptr(vkControl), 0, 0, 0)
+	time.Sleep(50 * time.Millisecond)
+	procKeybdEvent.Call(uintptr(vkControl), 0, uintptr(keyeventfKeyup), 0)
 	return nil
 }
