@@ -1,6 +1,5 @@
 const intervalInput = document.getElementById('interval');
 const toggleBtn = document.getElementById('toggleBtn');
-const statusBar = document.getElementById('statusBar');
 
 let isRunning = false;
 
@@ -13,10 +12,6 @@ async function init() {
   } catch (e) {
     console.error('Failed to load config:', e);
   }
-
-  window.mouseWizard.onStatus((msg) => {
-    statusBar.textContent = msg;
-  });
 }
 
 toggleBtn.addEventListener('click', async () => {
@@ -30,7 +25,6 @@ toggleBtn.addEventListener('click', async () => {
 async function startMover() {
   const interval = parseInt(intervalInput.value, 10);
   if (isNaN(interval) || interval < 1) {
-    statusBar.textContent = '请输入有效的正整数';
     return;
   }
 
@@ -40,11 +34,9 @@ async function startMover() {
       isRunning = true;
       toggleBtn.textContent = '停止';
       toggleBtn.className = 'btn btn-stop';
-    } else {
-      statusBar.textContent = `启动失败: ${result.error}`;
     }
   } catch (e) {
-    statusBar.textContent = `启动失败: ${e.message}`;
+    console.error('Start failed:', e.message);
   }
 }
 
@@ -55,7 +47,7 @@ async function stopMover() {
     toggleBtn.textContent = '启动';
     toggleBtn.className = 'btn btn-start';
   } catch (e) {
-    statusBar.textContent = `停止失败: ${e.message}`;
+    console.error('Stop failed:', e.message);
   }
 }
 
