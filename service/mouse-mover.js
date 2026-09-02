@@ -1,5 +1,17 @@
 const { execSync } = require('child_process');
 
+let _robotjs = null;
+function getRobotjs() {
+  if (_robotjs === null) {
+    try {
+      _robotjs = require('robotjs');
+    } catch (e) {
+      _robotjs = undefined;
+    }
+  }
+  return _robotjs;
+}
+
 class MouseMover {
   constructor() {
     this._running = false;
@@ -62,6 +74,12 @@ class MouseMover {
 
   _pressCtrlKey() {
     try {
+      const robot = getRobotjs();
+      if (robot) {
+        robot.keyTap('control');
+        return null;
+      }
+
       const platform = process.platform;
 
       if (platform === 'darwin') {
