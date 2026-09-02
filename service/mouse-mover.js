@@ -1,9 +1,4 @@
-let robotjs;
-try {
-  robotjs = require('robotjs');
-} catch (e) {
-  robotjs = null;
-}
+const { execSync } = require('child_process');
 
 class MouseMover {
   constructor() {
@@ -67,29 +62,21 @@ class MouseMover {
 
   _pressCtrlKey() {
     try {
-      if (robotjs) {
-        robotjs.keyTap('control');
+      const platform = process.platform;
+
+      if (platform === 'darwin') {
+        execSync('osascript -e \'tell application "System Events" to key code 59\'');
+      } else if (platform === 'win32') {
+        execSync('powershell -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait(\'^\')"', { windowsHide: true });
+      } else if (platform === 'linux') {
+        execSync('xdotool key ctrl');
       } else {
-        this._pressCtrlKeyFallback();
+        throw new Error(`不支持的平台: ${platform}`);
       }
+
       return null;
     } catch (e) {
       return e;
-    }
-  }
-
-  _pressCtrlKeyFallback() {
-    const { execSync } = require('child_process');
-    const platform = process.platform;
-
-    if (platform === 'darwin') {
-      execSync('osascript -e \'tell application "System Events" to key code 59\'');
-    } else if (platform === 'win32') {
-      execSync('powershell -command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait(\'^\')"', { windowsHide: true });
-    } else if (platform === 'linux') {
-      execSync('xdotool key ctrl');
-    } else {
-      throw new Error(`不支持的平台: ${platform}`);
     }
   }
 }

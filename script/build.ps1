@@ -9,6 +9,10 @@ Write-Host ""
 $PROJECT_DIR = Split-Path -Parent $PSScriptRoot
 Set-Location $PROJECT_DIR
 
+if (-not $env:ELECTRON_MIRROR) {
+    $env:ELECTRON_MIRROR = "https://npmmirror.com/mirrors/electron/"
+}
+
 if (-not (Test-Path "node_modules")) {
     Write-Host "[1/4] 安装依赖..." -ForegroundColor Yellow
     npm install
