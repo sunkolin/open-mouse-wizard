@@ -61,11 +61,25 @@ function createWindow() {
   });
 
   mainWindow.on('close', (event) => {
-    if (tray && !app.isQuitting) {
+    if (!app.isQuitting) {
       event.preventDefault();
-      mainWindow.hide();
+      quitApp();
     }
   });
+}
+
+function quitApp() {
+  app.isQuitting = true;
+  mover.stop();
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.destroy();
+    mainWindow = null;
+  }
+  app.quit();
 }
 
 function getAppIcon() {
@@ -85,7 +99,7 @@ function createTray() {
   const contextMenu = Menu.buildFromTemplate([
     { label: '显示主界面', click: () => { if (mainWindow) mainWindow.show(); } },
     { type: 'separator' },
-    { label: '退出', click: () => { app.isQuitting = true; app.quit(); } }
+    { label: '退出', click: () => { quitApp(); } }
   ]);
   tray.setToolTip('鼠标精灵');
   tray.setContextMenu(contextMenu);
@@ -127,13 +141,9 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
+  if (app.isQuitting || process.platform !== 'darwin') {
     app.quit();
   }
-});
-
-app.on('before-quit', () => {
-  mover.stop();
 });
 
 app.on('activate', () => {
