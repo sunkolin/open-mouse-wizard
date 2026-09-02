@@ -1,8 +1,0 @@
-[application]
-ID = "com.mousewizard.app"
-Name = "开源鼠标精灵"
-Version = "1.0.1"
-Build = 1
-
-[gui]
-Icon = "icon.png"

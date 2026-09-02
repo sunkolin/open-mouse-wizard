@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>鼠标精灵</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="../assets/icon.png" alt="icon" class="app-icon" onerror="this.style.display='none'">
+      <h1>鼠标精灵</h1>
+    </div>
+
+    <div class="form-group">
+      <label for="interval">时间间隔（秒）</label>
+      <input type="number" id="interval" min="1" value="60" placeholder="单位:秒">
+    </div>
+
+    <div class="status-bar" id="statusBar">就绪</div>
+
+    <button id="toggleBtn" class="btn btn-start">启动</button>
+  </div>
+
+  <script src="js/render.js"></script>
+</body>
+</html>

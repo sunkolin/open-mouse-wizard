@@ -10,51 +10,93 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build macOS
+        run: npm run build:mac
+
+      - name: Read version
+        id: version
+        run: |
+          version=$(node -e "console.log(require('./package.json').version || '0.0.0')")
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-build
+          path: dist/*.dmg
+
+  build-win:
     runs-on: windows-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          go-version: "1.24"
+          node-version: "20"
 
-      - name: Setup MinGW
-        shell: pwsh
-        run: |
-          choco install mingw -y --no-progress
-          $mingwBin = "C:\ProgramData\mingw64\mingw64\bin"
-          if (Test-Path $mingwBin) {
-            Write-Output "$mingwBin" >> $env:GITHUB_PATH
-          }
+      - name: Install dependencies
+        run: npm install
 
-      - name: Run build script
-        shell: pwsh
-        run: |
-          ./scripts/build.ps1
+      - name: Build Windows
+        run: npm run build:win
 
       - name: Read version
         id: version
         shell: pwsh
         run: |
-          $version = ""
-          foreach ($line in Get-Content "FyneApp.toml") {
-            if ($line -match '^\s*Version\s*=\s*"([^"]+)"') {
-              $version = $Matches[1]
-              break
-            }
-          }
-          if (-not $version) { $version = "0.0.0" }
+          $version = node -e "console.log(require('./package.json').version || '0.0.0')"
           Write-Output "version=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Create release and upload asset
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-build
+          path: dist/*.exe
+
+  release:
+    needs: [build-mac, build-win]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: |
+          version=$(node -e "console.log(require('./package.json').version || '0.0.0')")
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
-          files: bin/OpenMouseWizard-${{ steps.version.outputs.version }}.exe
+          files: |
+            dist/mac-build/*
+            dist/win-build/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

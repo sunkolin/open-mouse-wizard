@@ -1,6 +1,0 @@
-gui:
-  title: "鼠标精灵"
-  width: 250
-  height: 250
-mover:
-  interval: 60
